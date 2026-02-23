@@ -1,0 +1,8 @@
+# Maven build output
+target/
+
+# Compiled Java files
+*.class
+
+# OS / editor files (optional but good)
+.DS_Store
