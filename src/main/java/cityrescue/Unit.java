@@ -3,6 +3,7 @@ package cityrescue;
 import cityrescue.enums.*;
 
 public abstract class Unit {
+    
     private final int unitId;
     UnitType unitType;
     private final int stationId;
