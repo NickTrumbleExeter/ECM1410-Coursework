@@ -7,6 +7,10 @@ public class Station {
     private final int x;
     private final int y;
     private int capacity;
+    
+    public static int stationCount = 0;
+
+    Unit[] units;
 
     public Station(int stationId, String name, int x, int y, int capacity) {
         this.stationId = stationId;
@@ -14,6 +18,8 @@ public class Station {
         this.x = x;
         this.y = y;
         this.capacity = capacity;
+
+        this.units = new Unit[capacity];
     }
 
     public int getStationId() {
@@ -34,6 +40,10 @@ public class Station {
 
     public int getCapacity() {
         return capacity;
+    }
+
+    public int getStationCount(){
+        return stationCount;
     }
 
     public void setCapacity(int newCapacity) {

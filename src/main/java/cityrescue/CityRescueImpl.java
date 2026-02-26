@@ -12,29 +12,36 @@ import cityrescue.exceptions.*;
 public class CityRescueImpl implements CityRescue {
 
     // TODO: add fields (map, arrays for stations/units/incidents, counters, tick, etc.)
+    // add the exceptions in the methods
+    private final int MAX_STATIONS = 20;
+
+    private int tick = 0;
+    private CityMap map;
+    private Station[] stations = new Station[MAX_STATIONS];
 
     @Override
     public void initialise(int width, int height) throws InvalidGridException {
         // TODO: implement
+        map = new CityMap(width, height);
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public int[] getGridSize() {
         // TODO: implement
-        throw new UnsupportedOperationException("Not implemented yet");
+        return new int[]{map.getGridWidth(), map.getGridHeight()};
     }
 
     @Override
     public void addObstacle(int x, int y) throws InvalidLocationException {
         // TODO: implement
-        throw new UnsupportedOperationException("Not implemented yet");
+        map.addObstacle(x, y);
     }
 
     @Override
     public void removeObstacle(int x, int y) throws InvalidLocationException {
         // TODO: implement
-        throw new UnsupportedOperationException("Not implemented yet");
+        map.removeObstacle(x, y);
     }
 
     @Override
@@ -94,6 +101,10 @@ public class CityRescueImpl implements CityRescue {
     @Override
     public String viewUnit(int unitId) throws IDNotRecognisedException {
         // TODO: implement
+        Unit unit = geUnitFromId(unitId);
+        String formatted = String.format("U#%d TYPE=%s HOME=%s LOC=(%d,%d) STATUS=%s INCIDENT=%d WORK=%d", 
+            unitId, unit.getUnitType());//impliment the rest of the features
+        System.out.println(formatted);
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
@@ -136,6 +147,8 @@ public class CityRescueImpl implements CityRescue {
     @Override
     public void tick() {
         // TODO: implement
+        tick++;
+        //add the rest of the method
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
@@ -143,5 +156,15 @@ public class CityRescueImpl implements CityRescue {
     public String getStatus() {
         // TODO: implement
         throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    public Unit geUnitFromId(int unitId){
+        for (int i = 0; i < MAX_STATIONS; i++){
+            for(int j = 0; j < stations[i].getCapacity(); j++){
+                if (stations[i].units[j].getUnitId() == unitId)
+                    return stations[i].units[j];
+            }
+        }
+        throw new IDNotRecognisedException();
     }
 }
