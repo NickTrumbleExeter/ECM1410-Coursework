@@ -2,18 +2,23 @@ package cityrescue;
 
 import cityrescue.enums.*;
 
-public abstract class Unit {
-    private final int stationId;
+public abstract class Unit {    
     private final int unitId;
 
     private UnitType unitType;
     private UnitStatus status;
+    private int stationId;
     private int x;
     private int y;
 
-    public Unit(int unitId, int stationId){
-        this.unitId = unitId;
+    public static int unitIdCount = 0;
+
+    public Unit(UnitType type, int stationId){
+        this.unitId = unitIdCount;
         this.stationId = stationId;
+        this.unitType = type;
+        this.status = UnitStatus.IDLE;
+        unitIdCount++;
     }
 
     public int getUnitId(){
@@ -34,6 +39,14 @@ public abstract class Unit {
 
     public UnitStatus getStatus(){
         return status;
+    }
+
+    public void updateStationId(int newStationId){
+        stationId = newStationId;
+    }
+
+    public void updateStatus(UnitStatus status){
+        this.status = status;
     }
 
     abstract boolean canHandle(IncidentType incidentType);

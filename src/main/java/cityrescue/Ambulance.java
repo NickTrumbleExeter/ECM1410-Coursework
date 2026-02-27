@@ -6,7 +6,7 @@ import cityrescue.enums.UnitType;
 //2 ticks to resolve incident
 public class Ambulance extends Unit{
 
-    public Ambulance(int unitId, int stationId){
+    public Ambulance(int stationId){
         super();
         this.unitType = UnitType.AMBULANCE;
     }

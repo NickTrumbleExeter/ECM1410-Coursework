@@ -13,12 +13,16 @@ public class Incident {
     private int y;
     private int assignedUnit;
 
+    public static int incidentCount = 0;
+
     public Incident(IncidentType type, int severity, int x, int y){
         this.type = type;
         status = IncidentStatus.REPORTED;
         this.severity = severity;
         this.x = x;
         this.y = y;
+
+        incidentCount++;
     }
 
     public IncidentType getIncidentType(){

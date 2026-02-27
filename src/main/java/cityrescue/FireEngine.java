@@ -6,9 +6,8 @@ import cityrescue.enums.UnitType;
 //4 ticks to resolve incident
 public class FireEngine extends Unit{
 
-    public FireEngine(int unitId, int stationId){
+    public FireEngine(int stationId){
         super();
-        this.unitType = UnitType.FIRE_ENGINE;
     }
 
     @Override

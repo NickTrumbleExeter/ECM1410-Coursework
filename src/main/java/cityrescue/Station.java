@@ -1,5 +1,7 @@
 package cityrescue;
 
+import cityrescue.exceptions.InvalidCapacityException;
+
 public class Station {
     private static final int MAX_UNITS = 50;
     private final int stationId;
@@ -7,6 +9,7 @@ public class Station {
     private final int x;
     private final int y;
     private int capacity;
+    private int unitCount;
     
     public static int stationCount = 0;
     public static int IdCount = 0;
@@ -21,6 +24,7 @@ public class Station {
         this.units = new Unit[capacity];
         IdCount++;
         stationCount++;
+        unitCount = 0;
     }
 
     public int getStationId() {
@@ -50,8 +54,14 @@ public class Station {
     public static int getMaxUnits(){
         return MAX_UNITS;
     }
+    
+    public int getUnitCount(){
+        return unitCount;
+    }
 
-    public void setCapacity(int newCapacity) {
+    public void setCapacity(int newCapacity) throws InvalidCapacityException{
+        if (newCapacity < 0 || unitCount > newCapacity)
+            throw new InvalidCapacityException();
         this.capacity = newCapacity;
     }
 

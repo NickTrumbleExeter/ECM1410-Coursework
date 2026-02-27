@@ -23,9 +23,14 @@ public class CityRescueImpl implements CityRescue {
 
     @Override
     public void initialise(int width, int height) throws InvalidGridException {
-        // TODO: implement
+        if (width < 0 || height < 0)
+            throw new InvalidGridException();
+
+        tick = 0;
+        stations = new Station[MAX_STATIONS];
+        incidents = new Incident[MAX_INCIDENTS];
+
         map = new CityMap(width, height);
-        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
@@ -35,75 +40,147 @@ public class CityRescueImpl implements CityRescue {
 
     @Override
     public void addObstacle(int x, int y) throws InvalidLocationException {
+        if (!validLocation(x, y))
+            throw new InvalidLocationException();
+
         map.addObstacle(x, y);
     }
 
     @Override
     public void removeObstacle(int x, int y) throws InvalidLocationException {
+        if (!validLocation(x, y))
+            throw new InvalidLocationException();
+
         map.removeObstacle(x, y);
     }
 
     @Override
     public int addStation(String name, int x, int y) throws InvalidNameException, InvalidLocationException {
-        // TODO: implement
+        //defragmentation?
         if (name.isBlank())
             throw new InvalidNameException();
 
         int[] size = getGridSize();
-        if (x < 0 || y < 0 || x > size[0] - 1 || y > size[1] - 1)
+        if (!validLocation(x, y) || map.blocked[x][y])
             throw new InvalidLocationException();
         
         Station station = new Station(Station.IdCount, name, x, y, Station.getMaxUnits());
+        stations[Station.stationCount] = station;
         return Station.IdCount - 1;
     }
 
     @Override
     public void removeStation(int stationId) throws IDNotRecognisedException, IllegalStateException {
-        // TODO: implement
-        throw new UnsupportedOperationException("Not implemented yet");
+        Station station = getStationFromId(stationId);
+
+        if (station.getUnitCount() != 0)
+            throw new IllegalStateException();
+
+        for (int i = 0; i < MAX_STATIONS; i++){
+            if (stations[i].getStationId() == stationId)
+                stations[i] = null;
+        }
+
+        Station.stationCount--;
     }
 
     @Override
     public void setStationCapacity(int stationId, int maxUnits) throws IDNotRecognisedException, InvalidCapacityException {
-        // TODO: implement
         Station station = getStationFromId(stationId);
         station.setCapacity(maxUnits);
-        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public int[] getStationIds() {
-        // TODO: implement
-        throw new UnsupportedOperationException("Not implemented yet");
+        int[] stationIds = new int[MAX_STATIONS];
+        int counter = 0;
+        for (int i = 0; i < MAX_STATIONS; i++){
+            if (stations[i] != null){
+                stationIds[counter] = stations[i].getStationId();
+                coutner++;
+            }
+        }
+        
+        int[] resized = new int[counter];
+        System.arraycopy(stationIds, 0, resized, 0, counter);
+        return Arrays.sort(resized);
     }
 
     @Override
     public int addUnit(int stationId, UnitType type) throws IDNotRecognisedException, InvalidUnitException, IllegalStateException {
-        // TODO: implement
-        throw new UnsupportedOperationException("Not implemented yet");
+        Station station = getStationFromId(stationId);
+
+        if (type == null)
+            throw new IllegalStateException();
+
+        Unit unit = new Unit(type, stationId);
+
+        for (int i = 0; i < Station.getMaxUnits; i++){
+            if (station.units[i] == null){
+                station.units[i] = unit;
+                return unit.getUnitId();
+            }
+        }
+        throw new InvalidUnitException();
     }
 
     @Override
     public void decommissionUnit(int unitId) throws IDNotRecognisedException, IllegalStateException {
-        // TODO: implement
-        throw new UnsupportedOperationException("Not implemented yet");
+        Unit unit = geUnitFromId(unitId);
+        Station station = getStationFromId(unit.getStationId());
+        if (unit.getStatus() == UnitStatus.EN_ROUTE || unit.getStatus() == UnitStatus.AT_SCENE)
+            throw new IllegalStateException();
+
+        for (int i = 0; i < Station.getMaxUnits(); i++){
+            if (station.units[i].getUnitId() == unitId){
+                station.units[i] = null;
+                break;
+            }
+        }
     }
 
     @Override
     public void transferUnit(int unitId, int newStationId) throws IDNotRecognisedException, IllegalStateException {
-        // TODO: implement
-        throw new UnsupportedOperationException("Not implemented yet");
+        Unit unit = geUnitFromId(unitId);
+        Station station = getStationIds(unit.getStationId());
+        Station newStation = getStationFromId(newStationId);
+
+        if (unit.getStatus() != UnitStatus.IDLE)
+            throw new IllegalStateException();
+
+        for (int i = 0; i < Station.getMaxUnits(); i++) {
+            if (station.units[i].getUnitId() == unitId)
+                station.units[i] = null;
+        }
+
+        for (int i = 0; i < Station.getMaxUnits(); i++){
+            if (newStation.units[i] == null) {
+                newStation.units[i] = unit;
+                unit.updateStationId(newStationId);
+                return;
+            }
+        }
+        //if no space in new station
+        throw new InvalidCapacityException();
     }
 
     @Override
     public void setUnitOutOfService(int unitId, boolean outOfService) throws IDNotRecognisedException, IllegalStateException {
-        // TODO: implement
-        throw new UnsupportedOperationException("Not implemented yet");
+        Unit unit = geUnitFromId(unitId);
+
+        //check this
+        if (outOfService){
+            if (unit.getStatus() != UnitStatus.IDLE)
+                throw new IllegalStateException();
+            unit.updateStatus(UnitStatus.OUT_OF_SERVICE);
+        }
+        else {
+            unit.updateStatus(UnitStatus.IDLE);
+        }
     }
 
     @Override
     public int[] getUnitIds() {
-        // TODO: implement
         int[] unitIds = new int[MAX_STATIONS * Station.getMaxUnits()];
         int counter = 0;
         for (int i = 0; i < MAX_STATIONS; i++){
@@ -116,44 +193,80 @@ public class CityRescueImpl implements CityRescue {
         }
         int[] resized = new int[counter];
         System.arraycopy(unitIds, 0, resized, 0, counter);
-        return resized;
+        return Arrays.sort(resized);
     }
 
     @Override
     public String viewUnit(int unitId) throws IDNotRecognisedException {
         // TODO: implement
         Unit unit = geUnitFromId(unitId);
-        String formatted = String.format("U#%d TYPE=%s HOME=%s LOC=(%d,%d) STATUS=%s INCIDENT=%d WORK=%d", 
-            unitId, unit.getUnitType());//impliment the rest of the features
-        return formatted;
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("U#%d", unidId));
+        sb.append(String.format(" TYPE=%s", unit.getUnitType()));
+        sb.append(String.format(" HOME=%s", unit.getStationId()));
+        int[] location = getStationFromId(unit.getStationId()).Location;
+        sb.append(String.format(" LOC=(%d,%d)", location[0], location[1]));
+        sb.append(String.format(" STATUS=%s", unit.getStatus()));
+
+        //add these
+        int incidentId;
+        sb.append(String.format(" INCIDENT=%d", incidentId));
+
+        int work;
+        sb.append(String.format(" WORK=%d", work));
+        return sb.toString();
     }
 
     @Override
     public int reportIncident(IncidentType type, int severity, int x, int y) throws InvalidSeverityException, InvalidLocationException {
-        // TODO: implement
+        int[] size = getGridSize();
+        if (!validLocation(x, y) || map.blocked[x][y])
+            throw new InvalidLocationException();
+
+        if (type == null || severity < 1 || severity > 5)
+            throw new InvalidSeverityException();
+
         Incident incident = new Incident(type, severity, x, y);
-        throw new UnsupportedOperationException("Not implemented yet");
+        //incremented when new incident created
+        for (int i = 0; i < MAX_INCIDENTS; i++){
+            if (incidents[i] == null){
+                incidents[i] = incident;
+                break;
+            }
+        }
+        return incident.getIncidentId();
     }
 
     @Override
     public void cancelIncident(int incidentId) throws IDNotRecognisedException, IllegalStateException {
-        // TODO: implement
         Incident incident = getIncidentFromId(incidentId);
-        incident.updateStatus(IncidentStatus.CANCELLED);
-        throw new UnsupportedOperationException("Not implemented yet");
+        switch(incident.getIncidentStatus()){
+            case IncidentStatus.REPORTED:
+                incident.updateStatus(IncidentStatus.CANCELLED);
+                break;
+            case IncidentStatus.DISPATCHED:
+                //add this !!
+                break;
+            default:
+                throw new IllegalStateException();
+        }
     }
 
     @Override
     public void escalateIncident(int incidentId, int newSeverity) throws IDNotRecognisedException, InvalidSeverityException, IllegalStateException {
-        // TODO: implement
         Incident incident = getIncidentFromId(incidentId);
+
+        if (severity < 1 || severity > 5)
+            throw new InvalidSeverityException();
+
+        if (incident.getIncidentStatus() == IncidentStatus.RESOLVED || incident.getIncidentStatus() == IncidentStatus.CANCELLED)
+            throw new IllegalStateException();
+
         incident.updateSeverity(newSeverity);
-        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public int[] getIncidentIds() {
-        // TODO: implement
         int[] incidentIds = new int[MAX_INCIDENTS];
         int counter = 0;
         for (int i = 0; i < MAX_INCIDENTS; i++){
@@ -165,7 +278,7 @@ public class CityRescueImpl implements CityRescue {
 
         int[] resized = new int[counter];
         System.arraycopy(incidentIds, 0, resized, 0, counter);
-        return resized;
+        return Arrays.sort(resized);
     }
 
     @Override
@@ -200,7 +313,7 @@ public class CityRescueImpl implements CityRescue {
     }
 
 
-    public Unit geUnitFromId(int unitId){
+    public Unit geUnitFromId(int unitId) throws IDNotRecognisedException{
         for (int i = 0; i < MAX_STATIONS; i++){
             for(int j = 0; j < stations[i].getCapacity(); j++){
                 if (stations[i].units[j] != null && stations[i].units[j].getUnitId() == unitId)
@@ -225,5 +338,9 @@ public class CityRescueImpl implements CityRescue {
             }
         }
         throw new IDNotRecognisedException();
+    }
+
+    public boolean validLocation(int x, int y){
+        return !(x < 0 || y < 0 || x > size[0] - 1 || y > size[1] - 1);
     }
 }
