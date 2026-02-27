@@ -1,7 +1,7 @@
 package cityrescue;
 
 public class Station {
-
+    private static final int MAX_UNITS = 50;
     private final int stationId;
     private final String name;
     private final int x;
@@ -9,7 +9,7 @@ public class Station {
     private int capacity;
     
     public static int stationCount = 0;
-
+    public static int IdCount = 0;
     Unit[] units;
 
     public Station(int stationId, String name, int x, int y, int capacity) {
@@ -18,8 +18,9 @@ public class Station {
         this.x = x;
         this.y = y;
         this.capacity = capacity;
-
         this.units = new Unit[capacity];
+        IdCount++;
+        stationCount++;
     }
 
     public int getStationId() {
@@ -44,6 +45,10 @@ public class Station {
 
     public int getStationCount(){
         return stationCount;
+    }
+
+    public static int getMaxUnits(){
+        return MAX_UNITS;
     }
 
     public void setCapacity(int newCapacity) {
