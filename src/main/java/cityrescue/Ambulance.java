@@ -6,13 +6,17 @@ import cityrescue.enums.UnitType;
 //2 ticks to resolve incident
 public class Ambulance extends Unit{
 
-    public Ambulance(int stationId){
-        super();
-        this.unitType = UnitType.AMBULANCE;
+    public Ambulance(int unitId, int homeStationId, int startX, int startY){
+        super(unitId, UnitType.AMBULANCE, homeStationId, startX, startY);
     }
 
     @Override
-    public boolean canHandle(IncidentType incidentType){
-        return incidentType == IncidentType.MEDICAL;
+    public boolean canHandle(IncidentType type){
+        return type == IncidentType.MEDICAL;
+    }
+
+    @Override
+    public int getTicksToResolve(int severity) {
+        return 2;
     }
 }
