@@ -300,24 +300,39 @@ public class CityRescueImpl implements CityRescue {
 
     @Override
     public void tick() {
-        // TODO: implement
         tick++;
-        //add the rest of the method
+
         Unit[] unitsER = getERUnits();
         Incident[] incidents = getIncidents();
+        Incident[] unitAtScenes = new Incident[incidents.length];
+
+        int arrivedCount = 0;
+
         //1: move en_route units in ascending unit id
         for (Unit unit : unitsER) {
+            moveUnit(unit);
             
+            //2: mark arrivals
+            if (unit.getLocation() == incident.getLocation()){
+                unitAtScenes[arrivedCount] = incident;
+            }
         }
 
-        //2: mark arrivals
-        //3: process on scene work
-        //4: resolve completed incidents in ascending incident id
-
-        for 
-
         
-        throw new UnsupportedOperationException("Not implemented yet");
+        //3: process on scene work (resolveTick())
+        for(Incident incident : unitAtScenes){
+            incident.resolveTick();
+        }
+
+        //4: resolve completed incidents in ascending incident id
+        //maybe remove incident once completed?
+        for (Incident incident : incidents){
+            if (incident.getTicksToResolve() == 0){
+                Unit unitAtScene = geUnitFromId(incident.getAssignedUnit());
+                unitAtScene.clearAssignment();
+                incident.updateStatus(IncidentStatus.RESOLVED);
+            }
+        }
     }
 
     @Override
@@ -410,5 +425,46 @@ public class CityRescueImpl implements CityRescue {
         }
 
         return incidents;
+    }
+
+    public void moveUnit(Unit unit){
+        Incident incident = getIncidentFromId(unit.getAssignedIncidentId());
+            //add moving logic in order N E S W
+            int dist = unit.manhattenDist(unit.getLocation(), incident.getIncidentId());
+
+            //1.1: list all options removing blocked or out of bounds
+            int[][] dir = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}}; //NESW
+
+            //1.2: take the first legal move that reduces manhatten distance
+            for (int[] d : dir) {
+
+                int newX = unit.getX() + d[0];
+                int newY = unit.getY() + d[1];
+
+                if (!validLocation(newX, newY) || map.isBlocked(newX, newY))
+                    continue;
+
+                int newDistance = unit.manhattenDist(new int[]{newX, newY}, incident.getLocation());
+                if (newDistance < dist){
+                    unit.moveUnit(d);
+                    return;
+                }
+            }            
+
+            //1.3: if none reduce distance, take first legal in order N E S W
+
+            for (int[] d : dir){
+                int newX = unit.getX() + d[0];
+                int newY = unit.getY() + d[1];
+
+                if (!validLocation(newX, newY) || map.isBlocked(newX, newY))
+                    continue;
+
+                unit.moveUnit(d);
+                return;
+            }
+
+            //1.4: if no move available, stay put
+            return;
     }
 }

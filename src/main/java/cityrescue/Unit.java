@@ -48,6 +48,11 @@ public abstract class Unit {
         return new int[]{x, y};
     }
 
+    public void moveUnit(int[] dir){
+        x += dir[0];
+        y += dir[1];
+    }
+
     // some methods for geting the unit's x and y which will be needed for calculating manhattan distance 
     public int getX() {
         return x;
@@ -73,6 +78,7 @@ public abstract class Unit {
     //for resetting the unit so its now no longet assigned to an incedent 
     public void clearAssignment() {
         this.assignedIncidentId = -1;
+        this.status = UnitStatus.IDLE;
     }
 
     // methods for getting and assigning incedent IDs
@@ -87,4 +93,11 @@ public abstract class Unit {
     public abstract boolean canHandle(IncidentType type);
 
     public abstract int getTicksToResolve(int severity);
+
+    public int manhattenDist(int[] unitLOC, int[] incidentLOC){
+        int absX = Math.abs(unitLOC[0] - incidentLOC[0]);
+        int absY = Math.abs(unitLOC[1] - incidentLOC[1]);
+        
+        return absX + absY;
+    }
 }
