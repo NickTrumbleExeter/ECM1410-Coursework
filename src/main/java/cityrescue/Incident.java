@@ -12,20 +12,24 @@ public class Incident {
     private int x;
     private int y;
     private int assignedUnit;
+    private int ticksToResolve;
 
     public static int incidentCount = 0;
 
     public Incident(IncidentType type, int severity, int x, int y){
         this.type = type;
+        ticksToResolve = (type == IncidentType.FIRE) ? 4 : (type == IncidentType.CRIME) ? 3 : 2;
+
         status = IncidentStatus.REPORTED;
         this.severity = severity;
         this.x = x;
         this.y = y;
 
+        assignedUnit = -1;
         incidentCount++;
     }
 
-    public IncidentType getIncidentType(){
+    public IncidentType getType(){
         return type;
     }
 
@@ -45,6 +49,18 @@ public class Incident {
         return new int[] {x, y};
     }
 
+    public int getX(){
+        return x;
+    }
+
+    public int getY(){
+        return y;
+    }
+
+    public int getTicksToResolve(){
+        return ticksToResolve;
+    }
+
     public void updateSeverity(int newSeverity){
         if (newSeverity <= 5 && newSeverity >= 1)
             severity = newSeverity;
@@ -62,5 +78,9 @@ public class Incident {
 
     public void setAssignedUnit(int unitId){
         assignedUnit = unitId;
+    }
+
+    public void resolveTick(){
+        ticksToResolve--;
     }
 }

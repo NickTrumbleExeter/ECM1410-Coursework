@@ -5,6 +5,7 @@ import cityrescue.exceptions.InvalidLocationException;
 public class CityMap {
     private final int gridWidth;
     private final int gridHeight;
+    private static int obstacleCount = 0;
     boolean[][] blocked;
 
     public CityMap(int gridWidth, int gridHeight){
@@ -30,16 +31,22 @@ public class CityMap {
     public void addObstacle(int x, int y) throws InvalidLocationException {
         if (!inBounds(x, y)) throw new InvalidLocationException("Location out of bounds");
         blocked[x][y] = true;
+        obstacleCount++;
     }
 
     public void removeObstacle(int x, int y) throws InvalidLocationException {
         if (!inBounds(x, y)) throw new InvalidLocationException("Location out of bounds");
         blocked[x][y] = false;
+        obstacleCount--;
     }
 
     public boolean isBlocked(int x, int y) throws InvalidLocationException {
         if (!inBounds(x, y)) throw new InvalidLocationException("Location out of bounds");
         return blocked[x][y];
+    }
+
+    public static int getObstacleCount(){
+        return obstacleCount;
     }
     
 }

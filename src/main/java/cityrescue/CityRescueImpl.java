@@ -12,7 +12,7 @@ import cityrescue.exceptions.*;
 public class CityRescueImpl implements CityRescue {
 
     // TODO: add fields (map, arrays for stations/units/incidents, counters, tick, etc.)
-    // add the exceptions in the methods
+    // update the constructors for units to include IDs
     private final int MAX_STATIONS = 20;
     private final int MAX_INCIDENTS = 200;
 
@@ -286,7 +286,7 @@ public class CityRescueImpl implements CityRescue {
         // TODO: implement
         Incident incident = getIncidentFromId(incidentId);
         String formatted = String.format("I#%d TYPE=%s SEV=%s LOC=(%d,%d) STATUS=%s UNIT=%d", 
-            incidentId, incident.getIncidentType(), incident.getIncidentSeverity(), incident.getLocation(),
+            incidentId, incident.getType(), incident.getIncidentSeverity(), incident.getLocation(),
             incident.getIncidentStatus(), incident.getAssignedUnit());
         return formatted;
     }
@@ -303,15 +303,55 @@ public class CityRescueImpl implements CityRescue {
         // TODO: implement
         tick++;
         //add the rest of the method
+        Unit[] unitsER = getERUnits();
+        Incident[] incidents = getIncidents();
+        //1: move en_route units in ascending unit id
+        for (Unit unit : unitsER) {
+            
+        }
+
+        //2: mark arrivals
+        //3: process on scene work
+        //4: resolve completed incidents in ascending incident id
+
+        for 
+
+        
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public String getStatus() {
-        // TODO: implement
-        throw new UnsupportedOperationException("Not implemented yet");
-    }
+        int[] incidents = getIncidentIds();
+        int[] units = getUnitIds();
+        int[] stations = getStationIds();
 
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("TICK=" + tick);
+        sb.append(String.format("\nSTATIONS=%d UNITS=%d INCIDENTS=%d OBSTACLES=%d\n", 
+            stations.length, units.length, incidents.length, city.getObstacleCount()));
+        
+        sb.append("INCIDENTS\n");
+        for (int incidentID : incidents){
+            Incdient incident = getIncidentFromId(incidentID);
+            string unit = (incident.getAssignedUnit() > 0) ? incident.getAssignedUnit() : "-";
+            sb.append(String.format("I#%d TYPE=%s SEV=%d LOC=(%d,%d) STATUS=%s UNIT=%d\n", 
+                incidentID, incident.getType(), incident.getIncidentSeverity(), incident.getX(), 
+                incident.getY(), incident.getStatus(), unit));
+        }        
+
+        sb.append("UNITS\n");
+        for (int unitID : units){
+            Unit unit = geUnitFromId(unitID);
+            string incident = (unit.getAssignedIncidentId() > 0) ? incident.getAssignedIncidentId() : "-";
+            sb.append(String.format("I#%d TYPE=%s HOME=%d LOC=(%d,%d) STATUS=%s INCIDENT=%d\n", 
+                unitID, unit.getUnitType(), unit.getHomeStationId(), unit.getX(), 
+                unit.getY(), unit.getStatus(), incident));
+        }   
+
+        return sb.toString();
+    }
 
     public Unit geUnitFromId(int unitId) throws IDNotRecognisedException{
         for (int i = 0; i < MAX_STATIONS; i++){
@@ -342,5 +382,33 @@ public class CityRescueImpl implements CityRescue {
 
     public boolean validLocation(int x, int y){
         return !(x < 0 || y < 0 || x > size[0] - 1 || y > size[1] - 1);
+    }
+
+    public Unit[] getERUnits(){
+        int[] unitIDs = getUnitIds();
+        Unit[] units = new Unit[unitIDs.length];
+
+        int unitCount = 0;
+        for (int i = 0; i < unitIDs.length; i++){
+            if (getUnitFromId(unitIds[i]).getStatus() == UnitStatus.EN_ROUTE){
+                units[unitCount] = geUnitFromId(unitIds[i]);
+                unitCount ++;
+            }
+        }
+
+        Unit[] resized = new Unit[unitCount];
+        System.arraycopy(units, 0, resized, 0, unitCount);
+        return resized;
+    }
+
+    public Incident[] getIncidents(){
+        int[] incidentIDs = getIncidentIds();
+        Incident[] incidents = new Incident[incidentIDs.length];
+
+        for(int i = 0; i < incidentIDs.length; i++){
+            incidents[i] = getIncidentFromId(incidentIDs[i]);
+        }
+
+        return incidents;
     }
 }
