@@ -1,5 +1,7 @@
 package cityrescue;
 
+import java.util.Arrays;
+
 import cityrescue.enums.*;
 import cityrescue.exceptions.*;
 
@@ -14,11 +16,18 @@ public class CityRescueImpl implements CityRescue {
     // TODO: add fields (map, arrays for stations/units/incidents, counters, tick, etc.)
     // update the constructors for units to include IDs
     private final int MAX_STATIONS = 20;
+    private static final int MAX_UNITS = 50;
     private final int MAX_INCIDENTS = 200;
+    private final int DEFAULT_STATION_CAPACITY = 10; //this is a placeholder for a new stations capacity 
+                                                     // this is not dfined by the spec, but needs to be done to create a station
+
+    private int stationCount = 0;
+    private int nextStationId = 1;
 
     private int tick = 0;
     private CityMap map;
     private Station[] stations = new Station[MAX_STATIONS];
+    private Unit[] units = new Unit[MAX_UNITS];
     private Incident[] incidents = new Incident[MAX_INCIDENTS];
 
     @Override
@@ -58,15 +67,16 @@ public class CityRescueImpl implements CityRescue {
     public int addStation(String name, int x, int y) throws InvalidNameException, InvalidLocationException {
         //defragmentation?
         if (name.isBlank())
-            throw new InvalidNameException();
+            throw new InvalidNameException("Name cannot be blank");
 
-        int[] size = getGridSize();
-        if (!validLocation(x, y) || map.blocked[x][y])
-            throw new InvalidLocationException();
+        //int[] size = getGridSize();
+        if (!map.inBounds(x, y) || map.isBlocked(x, y))
+            throw new InvalidLocationException("Location is out of bounds or blocked");
+
+        int id = nextStationId++;
         
-        Station station = new Station(Station.IdCount, name, x, y, Station.getMaxUnits());
-        stations[Station.stationCount] = station;
-        return Station.IdCount - 1;
+        stations[stationCount++] = new Station(id, name, x, y, DEFAULT_STATION_CAPACITY);
+        return id;
     }
 
     @Override
@@ -74,14 +84,20 @@ public class CityRescueImpl implements CityRescue {
         Station station = getStationFromId(stationId);
 
         if (station.getUnitCount() != 0)
-            throw new IllegalStateException();
+            throw new IllegalStateException("Station still has units in it");
 
-        for (int i = 0; i < MAX_STATIONS; i++){
-            if (stations[i].getStationId() == stationId)
-                stations[i] = null;
+        // removeing station from array loop 
+        for (int i = 0; i < stationCount; i++) {
+            if (stations[i].getStationId() == stationId) {
+                for (int j = i; j < stationCount - 1; j++) {
+                    stations[j] = stations[j + 1];
+                }
+                stations[stationCount - 1] = null;
+                stationCount--;
+                return;
+            }
         }
 
-        Station.stationCount--;
     }
 
     @Override
@@ -366,6 +382,15 @@ public class CityRescueImpl implements CityRescue {
         }   
 
         return sb.toString();
+    }
+
+    private int countUnitsAtStation(int stationId) {
+        int count = 0;
+        for (int i = 0; i < unitCount; i++) {
+            Unit u = units[i];
+            if (u != null && u.getHomeStationId() == stationId) count++;
+        }
+        return count;
     }
 
     public Unit geUnitFromId(int unitId) throws IDNotRecognisedException{
