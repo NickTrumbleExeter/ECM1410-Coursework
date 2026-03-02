@@ -205,7 +205,8 @@ public class CityRescueImpl implements CityRescue {
         }
         int[] resized = new int[counter];
         System.arraycopy(unitIds, 0, resized, 0, counter);
-        return Arrays.sort(resized);
+        Arrays.sort(resized);
+        return resized;
     }
 
     @Override
@@ -290,7 +291,8 @@ public class CityRescueImpl implements CityRescue {
 
         int[] resized = new int[counter];
         System.arraycopy(incidentIds, 0, resized, 0, counter);
-        return Arrays.sort(resized);
+        Arrays.sort(resized);
+        return resized;
     }
 
     @Override
@@ -305,9 +307,48 @@ public class CityRescueImpl implements CityRescue {
 
     @Override
     public void dispatch() {
-        // TODO: implement
+        //TIE BREAKER
+        //ascending order incidents
+        //find correct units (correct type, not assigned already and not OOS)
+        //assign based off of shortest manhatten,
+        // then lowest unit id
+        //then lowest station id
 
-        throw new UnsupportedOperationException("Not implemented yet");
+        Incident[] reportedIncidents = getIncidents();
+        Unit[] availableUnits;
+        int[] manhattanDist;
+
+        for (Incident incident : reportedIncidents){
+            if (incident.getIncidentStatus() != IncidentStatus.REPORTED)
+                continue;
+
+            availableUnits = getAvailableUnits(incident.getType());
+            manhattanDist = new int[availableUnits.length];
+
+            int shoretestDist = Integer.MAX_VALUE;
+            Unit unitToAssign = availableUnits[0];//default unit
+
+            for (int i = 0; i < availableUnits.length; i++){
+                //if uncomment(slightly duplicate method), add unitType
+                //if (unit.getAssignedIncidentId() != -1 || unit.getUnitType() != unitType || unit.getStatus() == UnitStatus.OUT_OF_SERVICE)
+                //  continue;
+
+                int dist = availableUnits[i].manhattenDist(
+                    availableUnits[i].getLocation(), incident.getLocation()
+                );
+
+                manhattanDist[i] = dist;
+
+                //if statement too long, moved it to other methods
+                //method includes lowest unit id and then lowest station id 
+                if (dist < shoretestDist || isUnitIdLower(availableUnits[i], unitToAssign)){
+                    shoretestDist = dist;
+                    unitToAssign = availableUnits[i];
+                    //add index
+                }
+            }
+
+        }
     }
 
     @Override
@@ -435,6 +476,37 @@ public class CityRescueImpl implements CityRescue {
         Unit[] resized = new Unit[unitCount];
         System.arraycopy(units, 0, resized, 0, unitCount);
         return resized;
+    }
+
+    public Unit[] getAvailableUnits(IncidentType type){
+        //correct type, no assugned incident, not out of service
+        int[] unitIDs = getUnitIds();
+        Unit[] units = new Unit[unitIDs.length];
+
+        UnitType unitType = (type == IncidentType.FIRE) ? UnitType.FIRE_ENGINE : 
+            (type == IncidentType.CRIME) ? UnitType.POLICE_CAR : UnitType.AMBULANCE;
+
+        int unitCount = 0;
+        for (int i = 0; i < unitIDs.length; i++){
+            Unit unit = geUnitFromId(unitIDs[i]);
+            if (unit.getAssignedIncidentId() == -1 && unit.getUnitType() == unitType && unit.getStatus() != UnitStatus.OUT_OF_SERVICE){
+                units[unitCount] = geUnitFromId(unitIds[i]);
+                unitCount ++;
+            }
+        }
+
+        Unit[] resized = new Unit[unitCount];
+        System.arraycopy(units, 0, resized, 0, unitCount);
+        return resized;
+    }
+
+
+    public boolean isUnitIdLower(Unit u1, Unit u2){
+        return u1.getUnitId == u2.getUnitId() && u1.getUnitId() < u2.getUnitId() || isStationIdLower(u1, u2);
+    }
+
+    public boolean isStationIdLower(Unit u1, Unit u2){
+        return u1.getUnitId == u2.getUnitId() && u1.getHomeStationId() < u2.getHomeStationId();
     }
 
     public Incident[] getIncidents(){
