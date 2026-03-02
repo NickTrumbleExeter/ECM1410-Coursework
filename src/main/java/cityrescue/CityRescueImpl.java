@@ -125,7 +125,8 @@ public class CityRescueImpl implements CityRescue {
         if (type == null)
             throw new IllegalStateException();
 
-        Unit unit = new Unit(type, stationId);
+        Unit unit = new Unit(nextUnitId, type, stationId, station.getX(), station.getY());
+        nextUnitId++;
 
         for (int i = 0; i < Station.getMaxUnits; i++){
             if (station.units[i] == null){
@@ -220,11 +221,9 @@ public class CityRescueImpl implements CityRescue {
         int[] location = getStationFromId(unit.getStationId()).Location;
         sb.append(String.format(" LOC=(%d,%d)", location[0], location[1]));
         sb.append(String.format(" STATUS=%s", unit.getStatus()));
-
-        //add these
-        int incidentId;
-        sb.append(String.format(" INCIDENT=%d", incidentId));
-
+        sb.append(String.format(" INCIDENT=%d", unit.getAssignedIncidentId()));
+        
+        //add thess also not sure what work is?
         int work;
         sb.append(String.format(" WORK=%d", work));
         return sb.toString();
@@ -297,7 +296,6 @@ public class CityRescueImpl implements CityRescue {
 
     @Override
     public String viewIncident(int incidentId) throws IDNotRecognisedException {
-        // TODO: implement
         Incident incident = getIncidentFromId(incidentId);
         String formatted = String.format("I#%d TYPE=%s SEV=%s LOC=(%d,%d) STATUS=%s UNIT=%d", 
             incidentId, incident.getType(), incident.getIncidentSeverity(), incident.getLocation(),
@@ -307,13 +305,6 @@ public class CityRescueImpl implements CityRescue {
 
     @Override
     public void dispatch() {
-        //TIE BREAKER
-        //ascending order incidents
-        //find correct units (correct type, not assigned already and not OOS)
-        //assign based off of shortest manhatten,
-        // then lowest unit id
-        //then lowest station id
-
         Incident[] reportedIncidents = getIncidents();
         Unit[] availableUnits;
         int[] manhattanDist;
@@ -322,6 +313,7 @@ public class CityRescueImpl implements CityRescue {
             if (incident.getIncidentStatus() != IncidentStatus.REPORTED)
                 continue;
 
+            //find correct units (correct type, not assigned already and not OOS)
             availableUnits = getAvailableUnits(incident.getType());
             manhattanDist = new int[availableUnits.length];
 
@@ -340,7 +332,7 @@ public class CityRescueImpl implements CityRescue {
                 manhattanDist[i] = dist;
 
                 //if statement too long, moved it to other methods
-                //method includes lowest unit id and then lowest station id 
+                //assign based off of shortest manhatten, then lower unit id, then lower station id
                 if (dist < shoretestDist || isUnitIdLower(availableUnits[i], unitToAssign)){
                     shoretestDist = dist;
                     unitToAssign = availableUnits[i];
@@ -348,6 +340,11 @@ public class CityRescueImpl implements CityRescue {
                 }
             }
 
+            if (shoretestDist != Integer.MAX_VALUE){
+                //implies there was a unit found
+                incident.updateStatus(IncidentStatus.DISPATCHED);
+                unitToAssign.setStatus(UnitStatus.EN_ROUTE);
+            }
         }
     }
 
