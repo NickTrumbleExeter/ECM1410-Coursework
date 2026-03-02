@@ -14,7 +14,6 @@ import cityrescue.exceptions.*;
 public class CityRescueImpl implements CityRescue {
 
     // TODO: add fields (map, arrays for stations/units/incidents, counters, tick, etc.)
-    // update the constructors for units to include IDs
     private final int MAX_STATIONS = 20;
     private static final int MAX_UNITS = 50;
     private final int MAX_INCIDENTS = 200;
@@ -23,6 +22,9 @@ public class CityRescueImpl implements CityRescue {
 
     private int stationCount = 0;
     private int nextStationId = 1;
+
+    private int unitCount = 0;
+    private int nextUnitId = 1;
 
     private int tick = 0;
     private CityMap map;
@@ -108,18 +110,12 @@ public class CityRescueImpl implements CityRescue {
 
     @Override
     public int[] getStationIds() {
-        int[] stationIds = new int[MAX_STATIONS];
-        int counter = 0;
-        for (int i = 0; i < MAX_STATIONS; i++){
-            if (stations[i] != null){
-                stationIds[counter] = stations[i].getStationId();
-                coutner++;
+        int[] stationIds = new int[stationCount];
+        for (int i = 0; i < stationCount; i++){
+                stationIds[i] = stations[i].getStationId();
             }
-        }
-        
-        int[] resized = new int[counter];
-        System.arraycopy(stationIds, 0, resized, 0, counter);
-        return Arrays.sort(resized);
+            Arrays.sort(stationIds);
+            return stationIds;
     }
 
     @Override

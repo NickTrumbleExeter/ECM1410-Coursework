@@ -8,9 +8,6 @@ public class Station {
     private final int x;
     private final int y;
     private int capacity;
-    private int unitCount;
-
-    Unit[] units;
 
     public Station(int stationId, String name, int x, int y, int capacity) {
         this.stationId = stationId;
@@ -18,8 +15,6 @@ public class Station {
         this.x = x;
         this.y = y;
         this.capacity = capacity;
-        this.units = new Unit[capacity];
-        unitCount = 0;
     }
 
     public int getStationId() {
@@ -40,10 +35,6 @@ public class Station {
 
     public int getCapacity() {
         return capacity;
-    }
-    
-    public int getUnitCount(){
-        return unitCount;
     }
 
     public void setCapacity(int newCapacity) throws InvalidCapacityException{
