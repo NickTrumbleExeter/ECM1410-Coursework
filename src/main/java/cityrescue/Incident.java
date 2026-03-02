@@ -1,5 +1,6 @@
 package cityrescue;
 
+import cityrescue.exceptions.InvalidNameException;
 import cityrescue.enums.IncidentStatus;
 import cityrescue.enums.IncidentType;
 
@@ -65,7 +66,7 @@ public class Incident {
         if (newSeverity <= 5 && newSeverity >= 1)
             severity = newSeverity;
         else
-            throw new InvalidSeverityException();
+            throw new InvalidSeverityException("invalid severity");
     }
 
     public int getIncidentId(){
