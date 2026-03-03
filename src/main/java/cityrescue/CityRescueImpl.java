@@ -26,6 +26,9 @@ public class CityRescueImpl implements CityRescue {
     private int unitCount = 0;
     private int nextUnitId = 1;
 
+    private int incidentCount = 0;
+    private int nextIncidentId = 1;
+
     private int tick = 0;
     private CityMap map;
     private Station[] stations = new Station[MAX_STATIONS];
@@ -205,7 +208,6 @@ public class CityRescueImpl implements CityRescue {
 
     @Override
     public String viewUnit(int unitId) throws IDNotRecognisedException {
-        // TODO: implement
         Unit unit = geUnitFromId(unitId);
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("U#%d", unitId));
@@ -216,23 +218,20 @@ public class CityRescueImpl implements CityRescue {
         sb.append(String.format(" STATUS=%s", unit.getStatus()));
         sb.append(String.format(" INCIDENT=%d", unit.getAssignedIncidentId()));
         
-        //add thess also not sure what work is?
-        int work;
+        int work = getIncidentFromId(unit.getAssignedIncidentId()).getTicksRemaining();
         sb.append(String.format(" WORK=%d", work));
         return sb.toString();
     }
 
     @Override
     public int reportIncident(IncidentType type, int severity, int x, int y) throws InvalidSeverityException, InvalidLocationException {
-
-
         if (!validLocation(x, y) || map.blocked[x][y])
             throw new InvalidLocationException("Not a valid position");
 
         if (type == null || severity < 1 || severity > 5)
             throw new InvalidSeverityException("not a valid severity");
 
-        Incident incident = new Incident(type, severity, x, y);
+        Incident incident = new Incident(nextIncidentId++, type, severity, x, y);
         //incremented when new incident created
         for (int i = 0; i < MAX_INCIDENTS; i++){
             if (incidents[i] == null){
@@ -371,7 +370,7 @@ public class CityRescueImpl implements CityRescue {
         //4: resolve completed incidents in ascending incident id
         //maybe remove incident once completed?
         for (Incident incident : incidents){
-            if (incident.getTicksToResolve() == 0){
+            if (incident.getTicksRemaining() == 0){
                 Unit unitAtScene = geUnitFromId(incident.getAssignedUnit());
                 unitAtScene.clearAssignment();
                 incident.updateStatus(IncidentStatus.RESOLVED);
