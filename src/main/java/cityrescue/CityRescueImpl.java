@@ -12,8 +12,6 @@ import cityrescue.exceptions.*;
  * You may add additional classes in any package(s) you like.
  */
 public class CityRescueImpl implements CityRescue {
-
-    // TODO: add fields (map, arrays for stations/units/incidents, counters, tick, etc.)
     private final int MAX_STATIONS = 20;
     private static final int MAX_UNITS = 50;
     private final int MAX_INCIDENTS = 200;
@@ -73,11 +71,10 @@ public class CityRescueImpl implements CityRescue {
         //defragmentation?
         if (name.isBlank())
             throw new InvalidNameException("Name cannot be blank");
-
-        //int[] size = getGridSize();
         if (!map.inBounds(x, y) || map.isBlocked(x, y))
             throw new InvalidLocationException("Location is out of bounds or blocked");
-
+        if (stationCount >= MAX_STATIONS)
+            throw new CapacityExceededException("too many");
         int id = nextStationId++;
         
         stations[stationCount++] = new Station(id, name, x, y, DEFAULT_STATION_CAPACITY);
@@ -86,8 +83,6 @@ public class CityRescueImpl implements CityRescue {
 
     @Override
     public void removeStation(int stationId) throws IDNotRecognisedException, IllegalStateException {
-        Station station = getStationFromId(stationId);
-
         if (countUnitsAtStation(stationId) != 0)
             throw new IllegalStateException("Station still has units in it");
 
@@ -115,10 +110,10 @@ public class CityRescueImpl implements CityRescue {
     public int[] getStationIds() {
         int[] stationIds = new int[stationCount];
         for (int i = 0; i < stationCount; i++){
-                stationIds[i] = stations[i].getStationId();
-            }
-            Arrays.sort(stationIds);
-            return stationIds;
+            stationIds[i] = stations[i].getStationId();
+        }
+        Arrays.sort(stationIds);
+        return stationIds;
     }
 
     @Override
@@ -130,7 +125,7 @@ public class CityRescueImpl implements CityRescue {
         if (unitCount >= MAX_UNITS)
             throw new IllegalStateException("Max units reached");
         if(countUnitsAtStation(stationId) >= station.getCapacity())
-            throw new IllegalStateException("The station is at max capacity");
+            throw new CapacityExceededException("The station is at max capacity");
             
         int id = nextUnitId++;
 
@@ -150,7 +145,7 @@ public class CityRescueImpl implements CityRescue {
     @Override
     public void decommissionUnit(int unitId) throws IDNotRecognisedException, IllegalStateException {
         Unit unit = getUnitFromId(unitId);
-        Station station = getStationFromId(unit.getHomeStationId());
+
         if (unit.getStatus() == UnitStatus.EN_ROUTE || unit.getStatus() == UnitStatus.AT_SCENE)
             throw new IllegalStateException("illegal status");
 
@@ -168,17 +163,15 @@ public class CityRescueImpl implements CityRescue {
 
         if (unit.getStatus() != UnitStatus.IDLE)
             throw new IllegalStateException("invalid status");
+        if (countUnitsAtStation(newStationId) >= getStationFromId(newStationId).getCapacity())
+            throw new CapacityExceededException("max units reached");
 
-
-            unit.setHomeStationId(newStationId);
-        //if no space in new station
-        throw new IllegalStateException("max units reached");
+        unit.setHomeStationId(newStationId);        
     }
 
     @Override
     public void setUnitOutOfService(int unitId, boolean outOfService) throws IDNotRecognisedException, IllegalStateException {
         Unit unit = getUnitFromId(unitId);
-        //check this
         if (outOfService){
             if (unit.getStatus() != UnitStatus.IDLE)
                 throw new IllegalStateException("invalid state");
@@ -191,19 +184,12 @@ public class CityRescueImpl implements CityRescue {
 
     @Override
     public int[] getUnitIds() {
-        int[] unitIds = new int[MAX_UNITS];
-        int counter = 0;
-        for (int j = 0; j < MAX_UNITS; j++){
-            if (units[j] != null){
-                unitIds[counter] = units[j].getUnitId();
-                counter++;
-            }
+        int[] unitIds = new int[unitCount];
+        for (int j = 0; j < unitCount; j++){
+            unitIds[j] = units[j].getUnitId();
         }
-        
-        int[] resized = new int[counter];
-        System.arraycopy(unitIds, 0, resized, 0, counter);
-        Arrays.sort(resized);
-        return resized;
+        Arrays.sort(unitIds);
+        return unitIds;
     }
 
     @Override
@@ -227,9 +213,6 @@ public class CityRescueImpl implements CityRescue {
             int work = getIncidentFromId(unit.getAssignedIncidentId()).getTicksRemaining();
             sb.append(String.format(" WORK=%d", work));
         }
-        
-        
-        
         return sb.toString();
     }
 
@@ -240,21 +223,15 @@ public class CityRescueImpl implements CityRescue {
         if (type == null || severity < 1 || severity > 5)
             throw new InvalidSeverityException("not a valid severity");
         if (incidentCount >= MAX_INCIDENTS)
-            throw new InvalidSeverityException("too many incidents");
+            throw new CapacityExceededException("too many incidents");
 
         Incident incident = new Incident(nextIncidentId++, type, severity, x, y);
-        //incremented when new incident created
-        
-        for (int i = 0; i < MAX_INCIDENTS; i++){
-            if (incidents[i] == null){
-                incidents[i] = incident;
-                break;
-            }
-        }
-        incidentCount++;
+
+        incidents[incidentCount++] = incident;
         return incident.getIncidentId();
     }
 
+    //TODO: maybe neeed to remove the incident from the array?? 
     @Override
     public void cancelIncident(int incidentId) throws IDNotRecognisedException, IllegalStateException {
         Incident incident = getIncidentFromId(incidentId);
@@ -263,10 +240,12 @@ public class CityRescueImpl implements CityRescue {
                 incident.updateStatus(IncidentStatus.CANCELLED);
                 break;
             case DISPATCHED:
-                //add this !!
+                Unit unit = getUnitFromId(incident.getAssignedUnit());
+                unit.setStatus(UnitStatus.IDLE);
+                incident.updateStatus(IncidentStatus.CANCELLED);
                 break;
             default:
-                throw new IllegalStateException();
+                throw new IllegalStateException("Illegal state");
         }
     }
 
@@ -285,19 +264,12 @@ public class CityRescueImpl implements CityRescue {
 
     @Override
     public int[] getIncidentIds() {
-        int[] incidentIds = new int[MAX_INCIDENTS];
-        int counter = 0;
-        for (int i = 0; i < MAX_INCIDENTS; i++){
-            if (incidents[i] != null){
-                incidentIds[counter] = incidents[i].getIncidentId();
-                counter++;
-            }
+        int[] incidentIds = new int[incidentCount];
+        for (int i = 0; i < incidentCount; i++){
+            incidentIds[i] = incidents[i].getIncidentId();
         }
-
-        int[] resized = new int[counter];
-        System.arraycopy(incidentIds, 0, resized, 0, counter);
-        Arrays.sort(resized);
-        return resized;
+        Arrays.sort(incidentIds);
+        return incidentIds;
     }
 
     @Override
@@ -419,11 +391,6 @@ public class CityRescueImpl implements CityRescue {
 
         sb.append("UNITS\n");
         for (int unitID : units){
-            //Unit unit = getUnitFromId(unitID);
-            //String incident = (unit.getAssignedIncidentId() > 0) ? Integer.toString(unit.getAssignedIncidentId()) : "-";
-            // sb.append(String.format("I#%d TYPE=%s HOME=%d LOC=(%d,%d) STATUS=%s INCIDENT=%d\n", 
-            //     unitID, unit.getUnitType(), unit.getHomeStationId(), unit.getX(), 
-            //     unit.getY(), unit.getStatus(), incident));
             try{
                 sb.append(viewUnit(unitID));
                 sb.append("\n");
@@ -450,7 +417,6 @@ public class CityRescueImpl implements CityRescue {
             if (units[j] != null && units[j].getUnitId() == unitId)
                 return units[j];
         }
-        
         throw new RuntimeException("invalid unit ID");
     }
 
@@ -465,9 +431,8 @@ public class CityRescueImpl implements CityRescue {
 
     public Incident getIncidentFromId(int incidentId){
         for(int i = 0; i < MAX_INCIDENTS; i++){
-            if (incidents[i] != null && incidents[i].getIncidentId() == incidentId){
+            if (incidents[i] != null && incidents[i].getIncidentId() == incidentId)
                 return incidents[i];
-            }
         }
         throw new RuntimeException("invalid Incident ID " + Integer.toString(incidentId));
     }
