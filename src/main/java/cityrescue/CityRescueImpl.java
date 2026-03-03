@@ -149,7 +149,7 @@ public class CityRescueImpl implements CityRescue {
 
     @Override
     public void decommissionUnit(int unitId) throws IDNotRecognisedException, IllegalStateException {
-        Unit unit = geUnitFromId(unitId);
+        Unit unit = getUnitFromId(unitId);
         Station station = getStationFromId(unit.getHomeStationId());
         if (unit.getStatus() == UnitStatus.EN_ROUTE || unit.getStatus() == UnitStatus.AT_SCENE)
             throw new IllegalStateException("illegal status");
@@ -164,7 +164,7 @@ public class CityRescueImpl implements CityRescue {
 
     @Override
     public void transferUnit(int unitId, int newStationId) throws IDNotRecognisedException, IllegalStateException {
-        Unit unit = geUnitFromId(unitId);
+        Unit unit = getUnitFromId(unitId);
 
         if (unit.getStatus() != UnitStatus.IDLE)
             throw new IllegalStateException("invalid status");
@@ -172,12 +172,12 @@ public class CityRescueImpl implements CityRescue {
 
             unit.setHomeStationId(newStationId);
         //if no space in new station
-        throw new InvalidCapacityException("max units reached");
+        throw new IllegalStateException("max units reached");
     }
 
     @Override
     public void setUnitOutOfService(int unitId, boolean outOfService) throws IDNotRecognisedException, IllegalStateException {
-        Unit unit = geUnitFromId(unitId);
+        Unit unit = getUnitFromId(unitId);
         //check this
         if (outOfService){
             if (unit.getStatus() != UnitStatus.IDLE)
@@ -208,7 +208,7 @@ public class CityRescueImpl implements CityRescue {
 
     @Override
     public String viewUnit(int unitId) throws IDNotRecognisedException {
-        Unit unit = geUnitFromId(unitId);
+        Unit unit = getUnitFromId(unitId);
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("U#%d", unitId));
         sb.append(String.format(" TYPE=%s", unit.getUnitType()));
@@ -291,8 +291,8 @@ public class CityRescueImpl implements CityRescue {
     public String viewIncident(int incidentId) throws IDNotRecognisedException {
         Incident incident = getIncidentFromId(incidentId);
         String formatted = String.format("I#%d TYPE=%s SEV=%s LOC=(%d,%d) STATUS=%s UNIT=%d", 
-            incidentId, incident.getType(), incident.getIncidentSeverity(), incident.getLocation(),
-            incident.getIncidentStatus(), incident.getAssignedUnit());
+            incidentId, incident.getType(), incident.getIncidentSeverity(), incident.getX(),
+            incident.getY(), incident.getIncidentStatus(), incident.getAssignedUnit());
         return formatted;
     }
 
@@ -371,7 +371,7 @@ public class CityRescueImpl implements CityRescue {
         //maybe remove incident once completed?
         for (Incident incident : incidents){
             if (incident.getTicksRemaining() == 0){
-                Unit unitAtScene = geUnitFromId(incident.getAssignedUnit());
+                Unit unitAtScene = getUnitFromId(incident.getAssignedUnit());
                 unitAtScene.clearAssignment();
                 incident.updateStatus(IncidentStatus.RESOLVED);
             }
@@ -401,7 +401,7 @@ public class CityRescueImpl implements CityRescue {
 
         sb.append("UNITS\n");
         for (int unitID : units){
-            Unit unit = geUnitFromId(unitID);
+            Unit unit = getUnitFromId(unitID);
             String incident = (unit.getAssignedIncidentId() > 0) ? Integer.toString(unit.getAssignedIncidentId()) : "-";
             sb.append(String.format("I#%d TYPE=%s HOME=%d LOC=(%d,%d) STATUS=%s INCIDENT=%d\n", 
                 unitID, unit.getUnitType(), unit.getHomeStationId(), unit.getX(), 
@@ -420,13 +420,13 @@ public class CityRescueImpl implements CityRescue {
         return count;
     }
 
-    public Unit geUnitFromId(int unitId) throws IDNotRecognisedException{
+    public Unit getUnitFromId(int unitId){
         for(int j = 0; j < MAX_UNITS; j++){
             if (units[j] != null && units[j].getUnitId() == unitId)
                 return units[j];
         }
         
-        throw new IDNotRecognisedException("invalid unit ID");
+        throw new RuntimeException("invalid unit ID");
     }
 
 
@@ -435,7 +435,7 @@ public class CityRescueImpl implements CityRescue {
             if (stations[i] != null && stations[i].getStationId() == stationId)
                 return stations[i];
         }
-        throw new IDNotRecognisedException("invalid station ID");
+        throw new RuntimeException("invalid station ID");
     }
 
     public Incident getIncidentFromId(int incidentId){
@@ -444,7 +444,7 @@ public class CityRescueImpl implements CityRescue {
                 return incidents[i];
             }
         }
-        throw new IDNotRecognisedException("invalid Incident ID");
+        throw new RuntimeException("invalid Incident ID");
     }
 
     public boolean validLocation(int x, int y){
@@ -458,8 +458,17 @@ public class CityRescueImpl implements CityRescue {
 
         int unitCount = 0;
         for (int i = 0; i < unitIDs.length; i++){
-            if (geUnitFromId(unitIDs[i]).getStatus() == UnitStatus.EN_ROUTE){
-                units[unitCount] = geUnitFromId(unitIDs[i]);
+            Unit unit;
+            try {
+                unit = getUnitFromId(unitIDs[i]);
+            }
+            catch(Exception e){
+                System.out.println("Invalid unit ID: " + e.toString());
+                continue;
+            }
+
+            if (unit.getStatus() == UnitStatus.EN_ROUTE){
+                units[unitCount] = unit;
                 unitCount ++;
             }
         }
@@ -479,9 +488,16 @@ public class CityRescueImpl implements CityRescue {
 
         int unitCount = 0;
         for (int i = 0; i < unitIDs.length; i++){
-            Unit unit = geUnitFromId(unitIDs[i]);
+            Unit unit;
+            try{
+                unit = getUnitFromId(unitIDs[i]);
+            }
+            catch(Exception e){
+                System.out.println("Invalid ID: " + e.toString());
+                continue;
+            }
             if (unit.getAssignedIncidentId() == -1 && unit.getUnitType() == unitType && unit.getStatus() != UnitStatus.OUT_OF_SERVICE){
-                units[unitCount] = geUnitFromId(unitIDs[i]);
+                units[unitCount] = unit;
                 unitCount ++;
             }
         }
@@ -505,15 +521,30 @@ public class CityRescueImpl implements CityRescue {
         Incident[] incidents = new Incident[incidentIDs.length];
 
         for(int i = 0; i < incidentIDs.length; i++){
-            incidents[i] = getIncidentFromId(incidentIDs[i]);
+            Incident incident;
+            try{
+                incident = getIncidentFromId(incidentIDs[i]);
+            }
+            catch(Exception e){
+                System.out.println("invalid incident ID: " + e.toString());
+                continue;
+            }
+            incidents[i] = incident;
         }
 
         return incidents;
     }
 
     public void moveUnit(Unit unit){
-        Incident incident = getIncidentFromId(unit.getAssignedIncidentId());
-        //add moving logic in order N E S W
+        Incident incident;
+        try{
+            incident = getIncidentFromId(unit.getAssignedIncidentId());
+        }
+        catch(Exception e){
+            System.out.println("invalid incident id: " + e.toString());
+            return;
+        }
+            //add moving logic in order N E S W
         int dist = unit.manhattenDist(unit.getLocation(), incident.getLocation());
 
         //1.1: list all options removing blocked or out of bounds
@@ -524,10 +555,14 @@ public class CityRescueImpl implements CityRescue {
 
             int newX = unit.getX() + d[0];
             int newY = unit.getY() + d[1];
-
-            if (!validLocation(newX, newY) || map.isBlocked(newX, newY))
+            try {
+                if (!validLocation(newX, newY) || map.isBlocked(newX, newY))
+                    continue;
+            }
+            catch(Exception e){
+                System.out.println("out of bounds: " + e.toString());
                 continue;
-
+            }
             int newDistance = unit.manhattenDist(new int[]{newX, newY}, incident.getLocation());
             if (newDistance < dist){
                 unit.moveUnit(d);
@@ -540,10 +575,14 @@ public class CityRescueImpl implements CityRescue {
         for (int[] d : dir){
             int newX = unit.getX() + d[0];
             int newY = unit.getY() + d[1];
-
-            if (!validLocation(newX, newY) || map.isBlocked(newX, newY))
+            try {
+                if (!validLocation(newX, newY) || map.isBlocked(newX, newY))
+                    continue;
+            }
+            catch(Exception e){
+                System.out.println("Out of bounds direction");
                 continue;
-
+            }
             unit.moveUnit(d);
             return;
         }
