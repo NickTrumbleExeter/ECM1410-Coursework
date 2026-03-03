@@ -1,33 +1,31 @@
 package cityrescue;
 
-import cityrescue.exceptions.InvalidNameException;
 import cityrescue.enums.IncidentStatus;
 import cityrescue.enums.IncidentType;
+import cityrescue.exceptions.InvalidSeverityException;
 
 public class Incident {
     //ambulance = 2 ticks, police car = 3, fire engine = 4
-    private IncidentType type;
+    private final IncidentType type;
     private IncidentStatus status;
     private int severity;
-    private int incidentId;
-    private int x;
-    private int y;
-    private int assignedUnit;
-    private int ticksToResolve;
+    private final int incidentId;
+    private final int x;
+    private final int y;
+    private int assignedUnitId;
+    private int ticksRemaining;
 
-    public static int incidentCount = 0;
-
-    public Incident(IncidentType type, int severity, int x, int y){
+    public Incident(int incidentId, IncidentType type, int severity, int x, int y){
+        this.incidentId = incidentId;
         this.type = type;
-        ticksToResolve = (type == IncidentType.FIRE) ? 4 : (type == IncidentType.CRIME) ? 3 : 2;
 
-        status = IncidentStatus.REPORTED;
+        this.status = IncidentStatus.REPORTED;
+        this.assignedUnitId = -1;
+        this.ticksRemaining = 0;
+
         this.severity = severity;
         this.x = x;
         this.y = y;
-
-        assignedUnit = -1;
-        incidentCount++;
     }
 
     public IncidentType getType(){
@@ -58,15 +56,19 @@ public class Incident {
         return y;
     }
 
-    public int getTicksToResolve(){
-        return ticksToResolve;
+    public int getTicksRemaining(){
+        return ticksRemaining;
     }
 
-    public void updateSeverity(int newSeverity){
-        if (newSeverity <= 5 && newSeverity >= 1)
-            severity = newSeverity;
-        else
+    public void resolveTick() {
+        if (ticksRemaining > 0) ticksRemaining--;
+    }
+
+    public void updateSeverity(int newSeverity) throws InvalidSeverityException{
+        if (newSeverity < 1 || newSeverity > 5){
             throw new InvalidSeverityException("invalid severity");
+        }
+        this.severity = newSeverity;
     }
 
     public int getIncidentId(){
@@ -74,14 +76,17 @@ public class Incident {
     }
 
     public int getAssignedUnit(){
-        return assignedUnit;
+        return assignedUnitId;
     }
 
-    public void setAssignedUnit(int unitId){
-        assignedUnit = unitId;
+    public void setAssignedUnit(int unitId, int ticksToResolve){
+        this.assignedUnitId = unitId;
+        this.ticksRemaining = ticksToResolve;
     }
 
-    public void resolveTick(){
-        ticksToResolve--;
+    public void clearAssignedUnit(){
+        this.assignedUnitId = -1;
+        this.ticksRemaining = 0;
     }
+
 }
