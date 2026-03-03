@@ -123,18 +123,25 @@ public class CityRescueImpl implements CityRescue {
         Station station = getStationFromId(stationId);
 
         if (type == null)
-            throw new IllegalStateException();
+            throw new IllegalStateException("Unit type is null");
+        if (unitCount >= MAX_UNITS)
+            throw new IllegalStateException("Max units reached");
+        if(countUnitsAtStation(stationId) >= station.getCapacity())
+            throw new IllegalStateException("The station is at max capacity");
+            
+        int id = nextUnitId++;
 
-        Unit unit = new Unit(nextUnitId, type, stationId, station.getX(), station.getY());//fix this "cityrescue.Unit is abstract; cannot be instantiated"
-        nextUnitId++;
+        Unit unit;
+        unit = switch (type) {
+            case AMBULANCE -> new Ambulance(id, stationId, station.getX(), station.getY());
 
-        for (int i = 0; i < MAX_UNITS; i++){
-            if (units[i] == null){
-                units[i] = unit;
-                return unit.getUnitId();
-            }
-        }
-        throw new InvalidUnitException("No unit created");
+            case FIRE_ENGINE -> new FireEngine(id, stationId, station.getX(), station.getY());
+
+            case POLICE_CAR -> new PoliceCar(id, stationId, station.getX(), station.getY());
+        };
+
+        units[unitCount++] = unit;
+        return id;
     }
 
     @Override
