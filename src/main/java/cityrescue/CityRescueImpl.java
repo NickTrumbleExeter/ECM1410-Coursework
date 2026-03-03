@@ -213,13 +213,23 @@ public class CityRescueImpl implements CityRescue {
         sb.append(String.format("U#%d", unitId));
         sb.append(String.format(" TYPE=%s", unit.getUnitType()));
         sb.append(String.format(" HOME=%s", unit.getHomeStationId()));
-        int[] location = getStationFromId(unit.getHomeStationId()).getLocation();
+        int[] location = unit.getLocation();
         sb.append(String.format(" LOC=(%d,%d)", location[0], location[1]));
         sb.append(String.format(" STATUS=%s", unit.getStatus()));
-        sb.append(String.format(" INCIDENT=%d", unit.getAssignedIncidentId()));
+        String incidentId = "";
+        if (unit.getAssignedIncidentId() == -1){
+            incidentId = "-";
+            sb.append(String.format(" INCIDENT=%s", incidentId));
+        }
+        else{
+            incidentId = Integer.toString(unit.getAssignedIncidentId());
+            sb.append(String.format(" INCIDENT=%s", incidentId));
+            int work = getIncidentFromId(unit.getAssignedIncidentId()).getTicksRemaining();
+            sb.append(String.format(" WORK=%d", work));
+        }
         
-        int work = getIncidentFromId(unit.getAssignedIncidentId()).getTicksRemaining();
-        sb.append(String.format(" WORK=%d", work));
+        
+        
         return sb.toString();
     }
 
@@ -227,18 +237,21 @@ public class CityRescueImpl implements CityRescue {
     public int reportIncident(IncidentType type, int severity, int x, int y) throws InvalidSeverityException, InvalidLocationException {
         if (!validLocation(x, y) || map.blocked[x][y])
             throw new InvalidLocationException("Not a valid position");
-
         if (type == null || severity < 1 || severity > 5)
             throw new InvalidSeverityException("not a valid severity");
+        if (incidentCount >= MAX_INCIDENTS)
+            throw new InvalidSeverityException("too many incidents");
 
         Incident incident = new Incident(nextIncidentId++, type, severity, x, y);
         //incremented when new incident created
+        
         for (int i = 0; i < MAX_INCIDENTS; i++){
             if (incidents[i] == null){
                 incidents[i] = incident;
                 break;
             }
         }
+        incidentCount++;
         return incident.getIncidentId();
     }
 
@@ -337,6 +350,9 @@ public class CityRescueImpl implements CityRescue {
                 //implies there was a unit found
                 incident.updateStatus(IncidentStatus.DISPATCHED);
                 unitToAssign.setStatus(UnitStatus.EN_ROUTE);
+
+                unitToAssign.setAssignedIncidentId(incident.getIncidentId());
+                incident.setAssignedUnit(unitToAssign.getUnitId(), incident.getTicksRemaining());
             }
         }
     }
@@ -356,15 +372,17 @@ public class CityRescueImpl implements CityRescue {
             moveUnit(unit);
             
             //2: mark arrivals
-            if (unit.getLocation() == getIncidentFromId(unit.getAssignedIncidentId()).getLocation()){
+            if (unit.hasArrived(getIncidentFromId(unit.getAssignedIncidentId()).getLocation())){
                 unitAtScenes[arrivedCount] = getIncidentFromId(unit.getAssignedIncidentId());
+                arrivedCount++;
             }
         }
 
         
-        //3: process on scene work (resolveTick())
+        //3: process on scene work (resolveTick())//not working
         for(Incident incident : unitAtScenes){
-            incident.resolveTick();
+            if (incident != null)
+                incident.resolveTick();
         }
 
         //4: resolve completed incidents in ascending incident id
@@ -394,21 +412,28 @@ public class CityRescueImpl implements CityRescue {
         for (int incidentID : incidents){
             Incident incident = getIncidentFromId(incidentID);
             String unit = (incident.getAssignedUnit() > 0) ? Integer.toString(incident.getAssignedUnit()) : "-";
-            sb.append(String.format("I#%d TYPE=%s SEV=%d LOC=(%d,%d) STATUS=%s UNIT=%d\n", 
+            sb.append(String.format("I#%d TYPE=%s SEV=%d LOC=(%d,%d) STATUS=%s UNIT=%s\n", 
                 incidentID, incident.getType(), incident.getIncidentSeverity(), incident.getX(), 
                 incident.getY(), incident.getIncidentStatus(), unit));
         }        
 
         sb.append("UNITS\n");
         for (int unitID : units){
-            Unit unit = getUnitFromId(unitID);
-            String incident = (unit.getAssignedIncidentId() > 0) ? Integer.toString(unit.getAssignedIncidentId()) : "-";
-            sb.append(String.format("I#%d TYPE=%s HOME=%d LOC=(%d,%d) STATUS=%s INCIDENT=%d\n", 
-                unitID, unit.getUnitType(), unit.getHomeStationId(), unit.getX(), 
-                unit.getY(), unit.getStatus(), incident));
+            //Unit unit = getUnitFromId(unitID);
+            //String incident = (unit.getAssignedIncidentId() > 0) ? Integer.toString(unit.getAssignedIncidentId()) : "-";
+            // sb.append(String.format("I#%d TYPE=%s HOME=%d LOC=(%d,%d) STATUS=%s INCIDENT=%d\n", 
+            //     unitID, unit.getUnitType(), unit.getHomeStationId(), unit.getX(), 
+            //     unit.getY(), unit.getStatus(), incident));
+            try{
+                sb.append(viewUnit(unitID));
+                sb.append("\n");
+            }
+            catch(Exception e){
+                System.out.println("Invalid unit id: " + Integer.toString(unitID));
+            }
         }   
 
-        return sb.toString();
+        return sb.toString().stripTrailing();
     }
 
     private int countUnitsAtStation(int stationId) {
@@ -444,7 +469,7 @@ public class CityRescueImpl implements CityRescue {
                 return incidents[i];
             }
         }
-        throw new RuntimeException("invalid Incident ID");
+        throw new RuntimeException("invalid Incident ID " + Integer.toString(incidentId));
     }
 
     public boolean validLocation(int x, int y){
@@ -509,7 +534,7 @@ public class CityRescueImpl implements CityRescue {
 
 
     public boolean isUnitIdLower(Unit u1, Unit u2){
-        return u1.getUnitId() == u2.getUnitId() && u1.getUnitId() < u2.getUnitId() || isStationIdLower(u1, u2);
+        return u1.getUnitId() < u2.getUnitId() || isStationIdLower(u1, u2);
     }
 
     public boolean isStationIdLower(Unit u1, Unit u2){

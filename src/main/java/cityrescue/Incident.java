@@ -21,7 +21,7 @@ public class Incident {
 
         this.status = IncidentStatus.REPORTED;
         this.assignedUnitId = -1;
-        this.ticksRemaining = 0;
+        this.ticksRemaining = (type == IncidentType.FIRE) ? 4 : (type == IncidentType.CRIME) ? 3 : 2;
 
         this.severity = severity;
         this.x = x;

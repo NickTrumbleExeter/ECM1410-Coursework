@@ -51,6 +51,7 @@ public abstract class Unit {
     public void moveUnit(int[] dir){
         x += dir[0];
         y += dir[1];
+        //throw new RuntimeException("x: " + Integer.toString(x) + " y: " + Integer.toString(y) + "id: " + Integer.toString(unitId));
     }
 
     // some methods for geting the unit's x and y which will be needed for calculating manhattan distance 
@@ -60,6 +61,10 @@ public abstract class Unit {
 
     public int getY() {
         return y;
+    }
+
+    public boolean hasArrived(int[] LOC){
+        return x == LOC[0] && y == LOC[1];
     }
 
     public void setLocation(int x, int y) {
