@@ -177,6 +177,10 @@ public class CityRescueImpl implements CityRescue {
     // IMPLEMENT: IDNotRecognisedException, InvalidCapacityException
     @Override
     public void setStationCapacity(int stationId, int maxUnits) throws IDNotRecognisedException, InvalidCapacityException {
+        if () throw new IDNotRecognisedException ("Station ID must exist");
+
+        if (countUnitsAtStation(stationId) < maxUnits || maxUnits < 0) throw new InvalidCapacityException("New napacity must be positive and be less than the current unit count at that station");
+
         Station station = getStationFromId(stationId);
         station.setCapacity(maxUnits);
     }
