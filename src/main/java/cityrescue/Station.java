@@ -1,7 +1,5 @@
 package cityrescue;
 
-import cityrescue.exceptions.InvalidCapacityException;
-
 public class Station {
     private final int stationId;
     private final String name;
@@ -17,10 +15,20 @@ public class Station {
         this.capacity = capacity;
     }
 
+    /**
+     * returns teh ID of a specified station 
+     * 
+     * @return teh int ID of the station 
+     */
     public int getStationId() {
         return stationId;
     }
 
+    /**
+     * returns the name of the station 
+     * 
+     * @return string of teh stations name 
+     */
     public String getName() {
         return name;
     }
@@ -33,12 +41,20 @@ public class Station {
         return y;
     }
 
+    /**
+     * returns the capacity of the station 
+     * 
+     * @returnreturns the int capacity of the station 
+     */
     public int getCapacity() {
         return capacity;
     }
 
-    public void setCapacity(int newCapacity) throws InvalidCapacityException{
-        if (newCapacity <= 0) throw new InvalidCapacityException("Capacity must be positive");
+    /**
+     * sets the new capacity for the station 
+     * @param newCapacity new capacity for the station 
+     */
+    public void setCapacity(int newCapacity){
         this.capacity = newCapacity;
     }
 
