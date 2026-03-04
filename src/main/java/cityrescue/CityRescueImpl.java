@@ -177,12 +177,16 @@ public class CityRescueImpl implements CityRescue {
     // IMPLEMENT: IDNotRecognisedException, InvalidCapacityException
     @Override
     public void setStationCapacity(int stationId, int maxUnits) throws IDNotRecognisedException, InvalidCapacityException {
-        if () throw new IDNotRecognisedException ("Station ID must exist");
-
-        if (countUnitsAtStation(stationId) < maxUnits || maxUnits < 0) throw new InvalidCapacityException("New napacity must be positive and be less than the current unit count at that station");
-
-        Station station = getStationFromId(stationId);
-        station.setCapacity(maxUnits);
+        Station station;
+        try {
+            station = getStationFromId(stationId);
+            if (countUnitsAtStation(stationId) < maxUnits || maxUnits < 0) 
+                throw new InvalidCapacityException("New capacity must be positive and be less than the current unit count at that station");
+            station.setCapacity(maxUnits);
+        } catch(Exception e) {
+            throw new IDNotRecognisedException ("Station ID must exist");
+        }
+        
     }
 
     /**
@@ -389,8 +393,7 @@ public class CityRescueImpl implements CityRescue {
      * @param incidentId ID of the incedent that is being caneled 
      * 
      * @throws IllegalStateException if case isnt in the state reported or dispached 
-     */
-    //TODO: maybe neeed to remove the incident from the array?? 
+     */ 
     // remove IDNotRecognisedException
     @Override
     public void cancelIncident(int incidentId) throws IDNotRecognisedException, IllegalStateException {
