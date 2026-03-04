@@ -1,10 +1,9 @@
 package cityrescue;
 
-import java.net.IDN;
 import java.util.Arrays;
 
-import cityrescue.enums.IncidentStatus;//importing all classes
-import cityrescue.enums.IncidentType;
+import cityrescue.enums.IncidentStatus;
+import cityrescue.enums.IncidentType;//importing all classes
 import cityrescue.enums.UnitStatus;
 import cityrescue.enums.UnitType;
 import cityrescue.exceptions.CapacityExceededException;
@@ -145,8 +144,7 @@ public class CityRescueImpl implements CityRescue {
      * 
      * @throws IllegalStateException if an attempt is made to remove the station and it stil has units 
      * @throws IDNotRecognisedException if a station with that ID doesnt exist 
-     */
-    //IDnotrecognised exeption   
+     */  
     @Override
     public void removeStation(int stationId) throws IDNotRecognisedException, IllegalStateException {
         if (countUnitsAtStation(stationId) != 0)
@@ -175,7 +173,6 @@ public class CityRescueImpl implements CityRescue {
      * @throws IDNotRecognisedException if the specified station does not exist 
      * @throws InvalidCapacityException if  0 > specified capacity < units at station
      */
-    // IMPLEMENT: IDNotRecognisedException, InvalidCapacityException
     @Override
     public void setStationCapacity(int stationId, int maxUnits) throws IDNotRecognisedException, InvalidCapacityException {
         Station station = getStationFromId(stationId);
@@ -213,7 +210,6 @@ public class CityRescueImpl implements CityRescue {
      * 
      * @return the ID of the new unit
      */
-    // IMPLEMENT: IDNotRecognisedException
     @Override
     public int addUnit(int stationId, UnitType type) throws IDNotRecognisedException, CapacityExceededException, IllegalStateException {
         Station station = getStationFromId(stationId);
@@ -247,7 +243,6 @@ public class CityRescueImpl implements CityRescue {
      * 
      * @throws IllegalStateException if teh unit is benig used, either en route or at scene 
      */
-    //remove IDNotRecognisedException ?
     @Override
     public void decommissionUnit(int unitId) throws IDNotRecognisedException, IllegalStateException {
         Unit unit = getUnitFromId(unitId);
@@ -272,7 +267,6 @@ public class CityRescueImpl implements CityRescue {
      * @throws IllegalStateException if the unit is being used 
      * @throws CapacityExceededException if the new station is already at capacity 
      */
-    // remove IDNotRecognisedException ?
     @Override
     public void transferUnit(int unitId, int newStationId) throws IDNotRecognisedException, IllegalStateException, CapacityExceededException {
         Unit unit = getUnitFromId(unitId);
@@ -330,7 +324,6 @@ public class CityRescueImpl implements CityRescue {
      * 
      * @return a formatted string of unit information 
      */
-    //IMPLEMENT: IDNotRecognisedException
     @Override
     public String viewUnit(int unitId) throws IDNotRecognisedException {
         Unit unit = getUnitFromId(unitId);
@@ -391,7 +384,6 @@ public class CityRescueImpl implements CityRescue {
      * 
      * @throws IllegalStateException if case isnt in the state reported or dispached 
      */ 
-    // remove IDNotRecognisedException
     @Override
     public void cancelIncident(int incidentId) throws IDNotRecognisedException, IllegalStateException {
         Incident incident = getIncidentFromId(incidentId);
@@ -419,7 +411,6 @@ public class CityRescueImpl implements CityRescue {
      * @throws InvalidSeverityException if the severity is <1 or >5
      * @throws IllegalStateException if the incedent has already been resolved 
      */
-    //IMPLEMENT: IDNotRecognisedException
     @Override
     public void escalateIncident(int incidentId, int newSeverity) throws IDNotRecognisedException, InvalidSeverityException, IllegalStateException {
         Incident incident = getIncidentFromId(incidentId);
@@ -462,7 +453,6 @@ public class CityRescueImpl implements CityRescue {
      * 
      * @return retruns a formatted string of all the incident information
      */
-    //IMPLEMENT: IDNotRecognisedException
     @Override
     public String viewIncident(int incidentId) throws IDNotRecognisedException {
         Incident incident = getIncidentFromId(incidentId);
@@ -537,7 +527,6 @@ public class CityRescueImpl implements CityRescue {
      * - the incedent has its remianing ticks reduced 
      * - once the incedent has no ticks left the units are released and the incedent status is updated to RESOLVED 
      */
-    //IN_PROGRES status?
     @Override
     public void tick() {
         tick++;
@@ -635,6 +624,14 @@ public class CityRescueImpl implements CityRescue {
         return sb.toString().stripTrailing();
     }
 
+    /**
+     * counts all units at a station.
+     * loops through all unit ID, counts how many home station IDs match 
+     * returns the int of how many matched 
+     * 
+     * @param stationId ID of the station you want to count the units at
+     * @return int of the units at the station 
+     */
     private int countUnitsAtStation(int stationId) {
         int count = 0;
         for (int i = 0; i < unitCount; i++) {
@@ -644,6 +641,15 @@ public class CityRescueImpl implements CityRescue {
         return count;
     }
 
+    /**
+     * finds the unit with a specific ID 
+     * 
+     * @param unitId ID of the unit you want to find 
+     * 
+     * @return returns the unit found 
+     * 
+     * @throws IDNotRecognisedException if the id provided is invalid 
+     */
     public Unit getUnitFromId(int unitId) throws IDNotRecognisedException{
         for(int j = 0; j < MAX_UNITS; j++){
             if (units[j] != null && units[j].getUnitId() == unitId)
@@ -669,6 +675,12 @@ public class CityRescueImpl implements CityRescue {
         throw new IDNotRecognisedException("invalid Incident ID " + Integer.toString(incidentId));
     }
 
+    /**
+     * validates if a lcation on the grid is available or not at given coordinates
+     * @param x x coordinate of the location being checked 
+     * @param y y coordinate of the location being checked 
+     * @return returns if the location is valid or not 
+     */
     public boolean validLocation(int x, int y){
         int[] size = getGridSize();
         return !(x < 0 || y < 0 || x > size[0] - 1 || y > size[1] - 1);
@@ -691,6 +703,13 @@ public class CityRescueImpl implements CityRescue {
         return resized;
     }
 
+    /**
+     * finding all units avalible to respond to a given type of incident 
+     * assigns correct incident type to correct unit type 
+     * 
+     * @param type tyoe of incident being responded to 
+     * @return returns a list of available units 
+     */
     public Unit[] getAvailableUnits(IncidentType type){
         //correct type, no assugned incident, not out of service
         Unit[] tempunits = new Unit[unitCount];
@@ -713,7 +732,13 @@ public class CityRescueImpl implements CityRescue {
         return resized;
     }
 
-
+    /**
+     * method for sorting unit IDs
+     * 
+     * @param u1 first unit 
+     * @param u2 second unit 
+     * @return returns teh result of comparing the unit's IDs
+     */
     public boolean isUnitIdLower(Unit u1, Unit u2){
         return u1.getUnitId() < u2.getUnitId() || isStationIdLower(u1, u2);
     }
@@ -722,6 +747,11 @@ public class CityRescueImpl implements CityRescue {
         return u1.getUnitId() == u2.getUnitId() && u1.getHomeStationId() < u2.getHomeStationId();
     }
 
+    /**
+     * method for finsing all incedents on the grid 
+     * 
+     * @return returns an array of found incidents 
+     */
     public Incident[] getIncidents(){
         Incident[] tempincidents = new Incident[incidentCount];
         int counter = 0;
@@ -737,6 +767,14 @@ public class CityRescueImpl implements CityRescue {
         return ordered;
     }
 
+    /**
+     * method for moving a unit on the grid 
+     * movement directions are defined
+     * a legal move is taken to reduce manhatten distance 
+     * if none are best teh first move is taken (tie breaking)
+     * 
+     * @param unit unit being moved 
+     */
     public void moveUnit(Unit unit){
         Incident incident;
         try{

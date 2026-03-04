@@ -1,5 +1,14 @@
 package cityrescue;
 
+/**
+ * station class 
+ * handles data and methods for station objects 
+ * includes:
+ * -ID
+ * -name 
+ * -coordinates 
+ * -capacity 
+ */
 public class Station {
     private final int stationId;
     private final String name;
