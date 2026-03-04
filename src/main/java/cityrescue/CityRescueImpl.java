@@ -130,7 +130,7 @@ public class CityRescueImpl implements CityRescue {
         if (!map.inBounds(x, y) || map.isBlocked(x, y))
             throw new InvalidLocationException("Location is out of bounds or blocked");
         if (stationCount >= MAX_STATIONS)
-            throw new CapacityExceededException("too many");
+            throw new CapacityExceededException("capicty of stations exceeded");
         int id = nextStationId++;
         
         stations[stationCount++] = new Station(id, name, x, y, DEFAULT_STATION_CAPACITY);
@@ -253,6 +253,7 @@ public class CityRescueImpl implements CityRescue {
         for (int i = 0; i < MAX_UNITS; i++){
             if (units[i] != null && units[i].getUnitId() == unitId){
                 units[i] = null;
+                unitCount--;
                 break;
             }
         }
@@ -567,7 +568,7 @@ public class CityRescueImpl implements CityRescue {
                     }
                     
                     incident.updateStatus(IncidentStatus.RESOLVED);
-
+                    incident.clearAssignedUnit();
                 }
 
             }
