@@ -122,7 +122,6 @@ public class CityRescueImpl implements CityRescue {
      * 
      * @return returns an int of the new station ID
      */
-    //IMPLEMENT: setting the coordinate to blocked when adding a station 
     @Override
     public int addStation(String name, int x, int y) throws InvalidNameException, InvalidLocationException, CapacityExceededException {
         //defragmentation?
@@ -146,8 +145,7 @@ public class CityRescueImpl implements CityRescue {
      * @throws IllegalStateException if an attempt is made to remove the station and it stil has units 
      * @throws IDNotRecognisedException if a station with that ID doesnt exist 
      */
-    //IDnotrecognised exeption 
-    //IMPLEMENT: resetting the coordinate from blocked when removing the station  
+    //IDnotrecognised exeption   
     @Override
     public void removeStation(int stationId) throws IDNotRecognisedException, IllegalStateException {
         if (countUnitsAtStation(stationId) != 0)

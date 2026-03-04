@@ -33,10 +33,6 @@ public class Station {
         return y;
     }
 
-    public int[] getLocation(){
-        return new int[] {x, y};
-    }
-
     public int getCapacity() {
         return capacity;
     }
